@@ -9,6 +9,15 @@
 plugins {
     // Apply the application plugin to add support for building a CLI application in Java.
     application
+    id("org.sonarqube") version "3.3"
+}
+
+sonarqube {
+    properties {
+        property ("sonar.projectKey", "BackslashWelsh_Simple-Banking-System")
+        property ("sonar.organization", "backslash-welsh")
+        property ("sonar.host.url", "https://sonarcloud.io")
+    }
 }
 
 repositories {

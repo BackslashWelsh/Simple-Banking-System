@@ -3,28 +3,27 @@ package bank;
 import java.util.Scanner;
 
 public class Bank {
-    private final DataBase dataBase;
-
+    private final DataBase database;
     private final Scanner input = new Scanner(System.in);
-    private boolean exit;
-    private int dataBaseSize;
 
+    private boolean isExit;
+    private int dataBaseSize;
     private int clientID;
 
     Bank() {
-        dataBase = new DataBase("accounts.s3db");
-        this.dataBaseSize = dataBase.getID();
+        database = new DataBase("accounts.s3db");
+        this.dataBaseSize = database.getID();
         welcomeMenu();
     }
 
-    Bank(String dbName) {
-        dataBase = new DataBase(dbName);
-        this.dataBaseSize = dataBase.getID();
+    Bank(String dataBaseName) {
+        database = new DataBase(dataBaseName);
+        this.dataBaseSize = database.getID();
         welcomeMenu();
     }
 
     private void welcomeMenu() {
-        while (!exit) {
+        while (!isExit) {
             System.out.print("\n1. Create an account\n" +
                     "2. Log into account\n" +
                     "0. Exit\n" +
@@ -36,13 +35,13 @@ public class Bank {
     private void choices(int choice) {
         switch (choice) {
             case 1:
-                createNewAcc();
+                createAccount();
                 break;
             case 2:
                 login();
                 break;
             case 0:
-                exit = true;
+                isExit = true;
                 break;
             default:
                 System.out.println("There is no such a choice.");
@@ -51,7 +50,7 @@ public class Bank {
     }
 
     private void accountMenu() {
-        while (!exit) {
+        while (!isExit) {
             System.out.print("\n1. Balance\n" +
                     "2. Add income\n" +
                     "3. Do transfer\n" +
@@ -66,25 +65,22 @@ public class Bank {
     private void accountChoices(int choice) {
         switch (choice) {
             case 1:
-                int balance = dataBase.getIncome(clientID);
-                if (balance == -1)
-                    System.out.println("Sorry something went wrong try again.");
-                else
-                    System.out.println("Balance: " + balance);
+                getBalance();
                 break;
             case 2:
-                addIncome();
+                addBalance();
                 break;
             case 3:
                 transfer();
                 break;
             case 4:
-                dataBase.deleteAcc(clientID);
+                System.out.println(
+                        database.deleteAccount(clientID));
             case 5:
                 welcomeMenu();
                 break;
             case 0:
-                exit = true;
+                isExit = true;
                 clientID = 0;
                 break;
             default:
@@ -93,28 +89,26 @@ public class Bank {
         }
     }
 
+    private void getBalance() {
+        int balance = database.getBalance(clientID);
+        if (balance == -1) {
+            System.out.println("Sorry something went wrong try again.");
+        } else {
+            System.out.println("Balance: " + balance);
+        }
+    }
 
-    private void createNewAcc() {
-//        checkAccSize();
-//        accounts[++id] = new Account();
-        dataBase.createNewAcc(new Account(++dataBaseSize));
-//        dataBase.showDB();
-//        clientInfo(id);
+    private void createAccount() {
+        database.createAccount(new Account(++dataBaseSize));
     }
 
     public void login() {
-        while (!exit) {
+        while (!isExit) {
             System.out.print("Enter your card number:\n> ");
-            String cardN = input.next();
-            if (!checkByLuhn(cardN)) {
-                System.out.println("Probably you made a mistake in the card number." +
-                        " Please try again!");
-                return;
-            }
-            int cardID = dataBase.getCardID(cardN);
+            int cardID = getCardID();
 
             System.out.print("Enter your PIN:\n> ");
-            boolean idToPIN = dataBase.isIdToPIN(cardID, input.next());
+            boolean idToPIN = checkCardPIN(cardID);
 
             if (cardID == -1 || !idToPIN) {
                 System.out.println("\nWrong card number or PIN!");
@@ -124,6 +118,18 @@ public class Bank {
                 clientID = cardID;
                 accountMenu();
             }
+        }
+    }
+
+    private int getCardID() {
+        String cardN = input.next();
+
+        if (checkByLuhn(cardN)) {
+           return database.getCardID(cardN);
+        } else {
+            System.out.println("Probably you made a mistake in the card number. " +
+                    "Please try again!");
+            return -1;
         }
     }
 
@@ -141,34 +147,45 @@ public class Bank {
         return sum % 10 == 0;
     }
 
-    private void addIncome() {
+    private boolean checkCardPIN(int cardID) {
+        return database.isIdToPIN(cardID, input.next());
+    }
+
+    private void addBalance() {
         System.out.println("Enter income:");
-        System.out.println(dataBase.addIncome(clientID, input.nextInt()));
+        System.out.println(database.addBalance(clientID, input.nextInt()));
     }
 
     private void transfer() {
-        int transferID;
         System.out.println("Transfer\n" +
                 "Enter card number:");
+        int transferID = getTransferID();
+
+        if (transferID == -1)
+            return;
+
+        System.out.println("Enter how much money you want to transfer:");
+        int amount = input.nextInt();
+
+        if (amount > database.getBalance(clientID))
+            System.out.println("Not enough money!");
+        else
+            database.transfer(clientID, transferID, amount);
+    }
+
+    private int getTransferID() {
+        int transferID = -1;
         String cardN = input.next();
+
         if (!checkByLuhn(cardN))
             System.out.println("Probably you made a mistake in the card number." +
                     " Please try again!");
-        else if ((transferID = dataBase.getCardID(cardN)) == -1)
+        else if ((transferID = database.getCardID(cardN)) == -1)
             System.out.println("Such a card does not exist.");
-        else if (transferID == clientID)
+        else if (transferID == clientID) {
             System.out.println("You can't transfer money to the same account!");
-
-        else {
-            System.out.println("Enter how much money you want to transfer:");
-            int amount = input.nextInt();
-
-            if (amount > dataBase.getIncome(clientID))
-                System.out.println("Not enough money!");
-            else
-                dataBase.transfer(clientID, transferID, amount);
+            transferID = -1;
         }
+        return transferID;
     }
-
-
 }

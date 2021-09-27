@@ -30,7 +30,7 @@ class DataBase {
         }
     }
 
-    void createNewAcc(Account account) {
+    void createAccount(Account account) {
         try (Connection conn = database.getConnection();
              Statement stmt = conn.createStatement()) {
 
@@ -40,12 +40,13 @@ class DataBase {
                     account.toDataBase());
 
             ResultSet rs = stmt.executeQuery("SELECT number, pin FROM card " +
-                    "WHERE id =" + account.getId());
+                    "WHERE id =" + account.getClientID());
 
             System.out.println("Your card has been created");
             System.out.printf("Your card number:%n%s%n" +
                             "Your card PIN:%n%s%n",
-                    rs.getString("number"), rs.getString("pin"));
+                    rs.getString("number"),
+                    rs.getString("pin"));
             rs.close();
 
         } catch (SQLException e) {
@@ -53,12 +54,14 @@ class DataBase {
         }
     }
 
-    String addIncome(int id, int income) {
+    String addBalance(int clientID, int balance) {
         try (Connection conn = database.getConnection();
              Statement stmt = conn.createStatement()) {
+
             stmt.executeUpdate("UPDATE card " +
-                    "SET balance = balance + " + income +
-                    " WHERE id = " + id);
+                    "SET balance = balance + " + balance +
+                    " WHERE id = " + clientID);
+
         } catch (SQLException e) {
             e.printStackTrace();
             return "Sorry something went wrong try again.";
@@ -66,21 +69,20 @@ class DataBase {
         return "Income was added!";
     }
 
-    int getIncome(int id) {
-        int income;
+    int getBalance(int clientID) {
         try (Connection conn = database.getConnection();
              Statement stmt = conn.createStatement();
 
-                 ResultSet rs = stmt.executeQuery(
-                         "SELECT balance " +
-                                 "FROM card " +
-                                 "WHERE id =" + id)) {
-                income = rs.next() ? rs.getInt(1) : 0;
+             ResultSet rs = stmt.executeQuery(
+                     "SELECT balance " +
+                             "FROM card " +
+                             "WHERE id =" + clientID)) {
+
+            return rs.next() ? rs.getInt(1) : 0;
         } catch (SQLException e) {
             e.printStackTrace();
             return -1;
         }
-        return income;
     }
 
     void transfer(int clientID, int transferID, int amount) {
@@ -100,17 +102,20 @@ class DataBase {
             stmtTo.setInt(1, amount);
             stmtTo.setInt(2, transferID);
             stmtTo.executeUpdate();
+
             conn.commit();
-        } catch (SQLException e){
+        } catch (SQLException e) {
             e.printStackTrace();
         }
     }
 
-    String deleteAcc(int clientID) {
+    String deleteAccount(int clientID) {
         try (Connection conn = database.getConnection();
              Statement stmt = conn.createStatement()) {
+
             stmt.executeUpdate("DELETE FROM card " +
                     " WHERE id = " + clientID);
+
         } catch (SQLException e) {
             e.printStackTrace();
             return "Sorry something went wrong try again.";
@@ -119,37 +124,39 @@ class DataBase {
     }
 
     int getCardID(String cardN) {
-        int cardID = -1;
         try (Connection conn = database.getConnection();
              Statement stmt = conn.createStatement();
+
              ResultSet rs = stmt.executeQuery(
                      "SELECT id " +
                              "FROM card " +
                              "WHERE number = '" + cardN + "'")) {
-            cardID = rs.next() ? rs.getInt(1) : -1;
+
+            return rs.next() ? rs.getInt(1) : -1;
         } catch (SQLException e) {
             e.printStackTrace();
+            return -1;
         }
-        return cardID;
     }
 
     boolean isIdToPIN(int id, String cardPIN) {
-        boolean idToPIN = false;
         try (Connection conn = database.getConnection();
              Statement stmt = conn.createStatement();
+
              ResultSet rs = stmt.executeQuery(
                      "SELECT id " +
                              "FROM card " +
                              "WHERE id = '" + id +
                              "' AND pin = '" + cardPIN + "'")) {
-            idToPIN = rs.next();
+
+           return  rs.next();
         } catch (SQLException e) {
             e.printStackTrace();
+            return false;
         }
-        return idToPIN;
     }
 
-    void showDB() {
+    void showAllClients() {
         try (Connection conn = database.getConnection();
              Statement stmt = conn.createStatement();
              ResultSet rs = stmt.executeQuery("SELECT * FROM card")) {
@@ -166,18 +173,14 @@ class DataBase {
     }
 
     int getID() {
-        int id = 0;
         try (Connection conn = database.getConnection();
              Statement stmt = conn.createStatement();
              ResultSet rs = stmt.executeQuery("SELECT max(id) FROM card")) {
 
-            id = rs.getInt(1);
+            return rs.getInt(1);
         } catch (SQLException e) {
             e.printStackTrace();
+            return 0;
         }
-        return id;
     }
-
-
-
 }

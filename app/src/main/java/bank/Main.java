@@ -2,6 +2,7 @@ package bank;
 
 public class Main {
     public static void main(String[] args) {
+        // set database name "-fileName *.s3db"
         if (args.length == 2 && args[0].equals("-fileName")
                 && args[1].contains(".s3db"))
             new Bank(args[1]);
@@ -9,7 +10,3 @@ public class Main {
             new Bank();
     }
 }
-    // or maybe take a rest
-// figure out with Luhn// if user doesn't paas Luhn dont search & print massege
-// look at people's works & refactor
-// add default to switch
