@@ -164,7 +164,7 @@ class DataBase {
             while ((rs.next())) {
                 System.out.printf("id-%s N%s PIN%s\n",
                         rs.getString("id"),
-                        rs.getString("number"),
+                        rs.getString("number "),
                         rs.getString("pin"));
             }
         } catch (SQLException e) {
